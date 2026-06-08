@@ -1,10 +1,12 @@
 from rag.llm import generate_answer
 
 def ask_rag(query, vectordb):
-    docs = vectordb.similarity_search(
-        query,
-        k=3
+    retriever = vectordb.as_retriever(
+        search_kwargs={"k":3}
     )
+
+    docs = retriever.invoke(query)
+
 
     context = "\n\n".join(
         [doc.page_content for doc in docs]
