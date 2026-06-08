@@ -20,7 +20,7 @@ def ask_rag(query, vectordb):
     "I could not find that information in the document."
 
     Context:
-    {content}
+    {context}
 
     Question:
     {query}

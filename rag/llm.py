@@ -11,7 +11,7 @@ client = Groq(
 def generate_answer(prompt):
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
-        message=[
+        messages=[
             {
                 "role":"user",
                 "content": prompt

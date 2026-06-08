@@ -2,6 +2,7 @@ from rag.loader import load_pdf
 from rag.splitter import split_documents
 from rag.embedder import get_embedding_model
 from rag.vector_store import create_vector_store
+from rag.chatbot import ask_rag
 
 docs = load_pdf("data/sample.pdf")
 
@@ -15,15 +16,16 @@ db = create_vector_store(
 )
 
 
-query = "What is the machine learning?"
+while True:
+    query = input("\nAsk Question: ")
 
-results = db.similarity_search(
-    query,
-    k=3
-)
+    if query.lower() == "exit":
+        break
 
-print("\nRetrieved Chunks:\n")
+    answer = ask_rag(
+        query,
+        db
+    )
 
-for doc in results:
-    print(doc.page_content)
-    print("-" * 50)
+    print("\nAnswer:")
+    print(answer)
