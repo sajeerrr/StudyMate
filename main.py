@@ -1,38 +1,31 @@
-# from rag.loader import load_pdf
-# from rag.splitter import split_documents
-# from rag.embedder import get_embedding_model
-# from rag.vector_store import load_vector_store
-# from rag.chatbot import ask_rag
-
-# docs = load_pdf("data/sample.pdf")
-
-# chunks = split_documents(docs)
-
-# embeddings = get_embedding_model()
-
-# db = load_vector_store(embeddings)
-
-
-# while True:
-#     query = input("\nAsk Question: ")
-
-#     if query.lower() == "exit":
-#         break
-
-#     answer = ask_rag(
-#         query,
-#         db
-#     )
-
-#     print("\nAnswer:")
-#     print(answer)
-
 from fastapi import FastAPI,UploadFile,File
+
+from rag.loader import load_pdf
+from rag.splitter import split_documents
+from rag.embedder import get_embedding_model
+from rag.vector_store import create_vector_store,load_vector_store
+from rag.chatbot import ask_rag
+
+from schemas import ChatRequest,ChatResponse
+
+from fastapi.middleware.cors import CORSMiddleware
+
+
 
 app = FastAPI(
     title = "StudyMate",
     version = "1.0.0"
 )
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
+
 
 @app.get("/")
 def home():
@@ -49,7 +42,27 @@ async def upload_pdf(
     with open(filepath,"wb") as f:
         f.write(await file.read())
 
+    docs = load_pdf(filepath)
+
+    chunks = split_documents(docs)
+
+    embeddings = get_embedding_model()
+
+    create_vector_store(chunks,embeddings)
+
     return {
-        "message":"PDF Uploaded",
-        "filename":file.filename
+        "message":"PDF Processed Successfully"
     }
+
+@app.post("/chat",response_model=ChatResponse)
+def chat(request: ChatRequest):
+    embeddings = get_embedding_model()
+
+    db = load_vector_store(embeddings)
+
+    answer = ask_rag(
+        request.question,
+        db
+    )
+
+    return ChatResponse(answer=answer)
