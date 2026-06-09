@@ -19,3 +19,5 @@ model.fit(X_vec, y)
 
 joblib.dump(model, "models/topic_classifier.pkl")
 joblib.dump(tfidf, "models/tfidf.pkl")
+
+print("Model Saved")

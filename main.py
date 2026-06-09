@@ -7,8 +7,9 @@ from rag.vector_store import create_vector_store,load_vector_store
 from rag.chatbot import ask_rag
 
 from schemas import ChatRequest,ChatResponse
-
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from ml import difficulty
 
 
 
@@ -66,3 +67,17 @@ def chat(request: ChatRequest):
     )
 
     return ChatResponse(answer=answer)
+
+
+class DifficulyRequest(BaseModel):
+    question: str
+
+@app.post("/predict-difficulty")
+def predict(request: DifficulyRequest):
+    level = difficulty.predict_difficulty(
+        request.question
+    )
+
+    return {
+        "difficulty": level
+    }
