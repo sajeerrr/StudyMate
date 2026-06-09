@@ -12,7 +12,9 @@ def get_analytics(db):
 def analyze_topics(data):
     strong=[]
     weak=[]
-    for topic,score in data:
+    for result in data:
+        topic = result.topic
+        score = result.percentage
         if score >= 75:
             strong.append(topic)
 

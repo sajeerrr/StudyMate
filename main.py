@@ -174,7 +174,7 @@ def recommendations(db: Session = Depends(get_db)):
 
 @app.get("/dashboard")
 def dashboard(db:Session = Depends(get_db)):
-    results = db.query(QuizResult.all())
+    results = db.query(QuizResult).all()
 
     total_quizzes = len(results)
 
