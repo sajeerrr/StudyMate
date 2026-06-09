@@ -69,11 +69,9 @@ def chat(request: ChatRequest):
     return ChatResponse(answer=answer)
 
 
-class modelRequest(BaseModel):
-    question: str
 
 @app.post("/predict-difficulty")
-def predict(request: modelRequest):
+def predict(request: ChatRequest):
     level = difficulty.predict_difficulty(
         request.question
     )
@@ -83,8 +81,8 @@ def predict(request: modelRequest):
     }
 
 
-@app.post("/predict-topic")
-def predict(request: modelRequest):
+@app.post("/classify-topic")
+def classify(request: ChatRequest):
     topic = classifier.predict_topic(
         request.question
     )
@@ -92,3 +90,5 @@ def predict(request: modelRequest):
     return {
         "Topic": topic
     }
+
+

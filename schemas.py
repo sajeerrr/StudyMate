@@ -5,3 +5,8 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     answer: str
+
+class QuizRequest(BaseModel):
+    topic: str
+    difficulty: str
+    num_questions: int = 5
