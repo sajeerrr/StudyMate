@@ -15,6 +15,7 @@ from ml import difficulty,classifier
 from db.database import engine,Base,SessionLocal
 from db.models import QuizResult
 from sqlalchemy.orm import Session
+from analytics import get_analytics,analyze_topics,recommend_topics
 
 
 Base.metadata.create_all(bind=engine)
@@ -117,14 +118,14 @@ def create_quiz(request: QuizRequest):
 
     return quiz
 
-@app.post("/submit")
-def submit_quiz(request: QuizSubmission):
-    result = evaluate_quiz(
-        request.questions,
-        request.answers
-    )
+# @app.post("/submit")
+# def submit_quiz(request: QuizSubmission):
+#     result = evaluate_quiz(
+#         request.questions,
+#         request.answers
+#     )
 
-    return result
+#     return result
 
 @app.post("/submit-quiz")
 def submit_quiz(
@@ -147,4 +148,50 @@ def submit_quiz(
 
     return {
         "message": "Result Saved"
+    }
+
+
+@app.post("/analytics")
+def analytics(db: Session = Depends(get_db)):
+    data = get_analytics(db)
+    strong, weak = analyze_topics(data)
+
+    return {
+        "strong_topics": strong,
+        "weak_topics": weak
+    }
+
+@app.post("/recomendations")
+def recommendations(db: Session = Depends(get_db)):
+    data = get_analytics(db)
+    strong, weak = analyze_topics(data)
+
+    recs = recommend_topics(weak)
+
+    return {
+        "recommendations": recs
+    }
+
+@app.get("/dashboard")
+def dashboard(db:Session = Depends(get_db)):
+    results = db.query(QuizResult.all())
+
+    total_quizzes = len(results)
+
+    if total_quizzes > 0:
+        average_score = round(
+            sum(r.percentage for r in results)/total_quizzes,2
+        )
+    else:
+        average_score = 0
+    
+    strong, weak =analyze_topics(db)
+    recommendations = recommend_topics(weak)
+
+    return {
+        "total_quizzes": total_quizzes,
+        "average_score": average_score,
+        "strong_topics": strong,
+        "weak_topics": weak,
+        "recommendations": recommendations
     }
