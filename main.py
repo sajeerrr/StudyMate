@@ -1,16 +1,31 @@
-from fastapi import FastAPI,UploadFile,File
+from fastapi import FastAPI,UploadFile,File,Depends
 
 from rag.loader import load_pdf
 from rag.splitter import split_documents
 from rag.embedder import get_embedding_model
 from rag.vector_store import create_vector_store,load_vector_store
 from rag.chatbot import ask_rag
+from rag.quiz_generator import generate_quiz,evaluate_quiz
 
-from schemas import ChatRequest,ChatResponse
+from schemas import ChatRequest,ChatResponse,QuizRequest,QuizSubmission,QuizStore
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from ml import difficulty,classifier
 
+from db.database import engine,Base,SessionLocal
+from db.models import QuizResult
+from sqlalchemy.orm import Session
+
+
+Base.metadata.create_all(bind=engine)
+
+def get_db():
+    db = SessionLocal()
+
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 app = FastAPI(
@@ -92,3 +107,44 @@ def classify(request: ChatRequest):
     }
 
 
+@app.post("/quiz")
+def create_quiz(request: QuizRequest):
+    quiz = generate_quiz(
+        request.topic,
+        request.difficulty,
+        request.num_questions
+    )
+
+    return quiz
+
+@app.post("/submit")
+def submit_quiz(request: QuizSubmission):
+    result = evaluate_quiz(
+        request.questions,
+        request.answers
+    )
+
+    return result
+
+@app.post("/submit-quiz")
+def submit_quiz(
+    submission: QuizStore,
+    db: Session = Depends(get_db)
+):
+
+    percentage = (submission.score/submission.total)*100
+
+    result = QuizResult(
+        topic = submission.topic,
+        difficulty = submission.difficulty,
+        score = submission.score,
+        total = submission.total,
+        percentage = percentage
+    )
+
+    db.add(result)
+    db.commit()
+
+    return {
+        "message": "Result Saved"
+    }

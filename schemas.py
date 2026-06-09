@@ -10,3 +10,14 @@ class QuizRequest(BaseModel):
     topic: str
     difficulty: str
     num_questions: int = 5
+
+class QuizSubmission(BaseModel):
+    questions: list
+    answers: list
+
+
+class QuizStore(BaseModel):
+    topic: str
+    difficulty: str
+    score: int
+    total: int
