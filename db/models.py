@@ -6,7 +6,6 @@ class QuizResult(Base):
     __tablename__ = "quiz_results"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id =Column(Integer)
     topic = Column(String)
     difficulty = Column(String)
     score = Column(Integer)
