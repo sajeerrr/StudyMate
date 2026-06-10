@@ -1,27 +1,8 @@
-# import streamlit as st
-# import requests
-
-# topic = st.text_input("Topic")
-
-# difficulty = st.selectbox(
-#     "Difficulty",["Easy","Medium","Hard"]
-# )
-
-# if st.button("Generate Quiz"):
-#     response = requests.post(
-#         "http://localhost:8000/quiz",
-#         json={
-#             "topic": topic,
-#             "difficulty": difficulty,
-#             "num_questions": 5
-#         }
-#     )
-
-#     quiz = response.json()
-
-#     st.json(quiz)
 import streamlit as st
 import requests
+from html import escape
+
+API_URL = "http://localhost:8000"
 
 st.set_page_config(
     page_title="StudyMate Quiz",
@@ -34,6 +15,15 @@ if "quiz" not in st.session_state:
 
 if "submitted" not in st.session_state:
     st.session_state.submitted = False
+
+if "quiz_meta" not in st.session_state:
+    st.session_state.quiz_meta = {
+        "topic": "",
+        "difficulty": "Easy",
+    }
+
+if "score" not in st.session_state:
+    st.session_state.score = 0
 
 st.markdown("""
 <style>
@@ -109,8 +99,23 @@ st.markdown("""
 .quiz-card{
     background:#161b27;
     border:1px solid #21293d;
-    border-radius:14px;
+    border-radius:8px;
     padding:24px;
+    margin-top:18px;
+}
+
+.quiz-meta{
+    color:#8b949e;
+    font-size:14px;
+    margin-bottom:16px;
+}
+
+.answer-row{
+    border:1px solid #21293d;
+    border-radius:8px;
+    padding:12px 14px;
+    margin-bottom:10px;
+    background:#0d1117;
 }
 
 .stButton button{
@@ -141,12 +146,23 @@ with st.sidebar:
 
     topic = st.text_input(
         "Topic",
-        placeholder="Machine Learning"
+        placeholder="Machine Learning",
+        value=st.session_state.quiz_meta.get("topic", "")
     )
 
     difficulty = st.selectbox(
         "Difficulty",
-        ["Easy","Medium","Hard"]
+        ["Easy", "Medium", "Hard"],
+        index=["Easy", "Medium", "Hard"].index(
+            st.session_state.quiz_meta.get("difficulty", "Easy")
+        )
+    )
+
+    num_questions = st.slider(
+        "Questions",
+        min_value=5,
+        max_value=20,
+        value=5
     )
 
     generate_quiz = st.button(
@@ -154,26 +170,95 @@ with st.sidebar:
         use_container_width=True
     )
 
+    if st.session_state.quiz is not None:
+        reset_quiz = st.button(
+            "New Quiz",
+            use_container_width=True
+        )
+
+        if reset_quiz:
+            st.session_state.quiz = None
+            st.session_state.submitted = False
+            st.session_state.score = 0
+            st.session_state.quiz_meta = {
+                "topic": "",
+                "difficulty": "Easy",
+            }
+
+            for key in list(st.session_state.keys()):
+                if key.startswith("question_"):
+                    del st.session_state[key]
+
+            st.rerun()
+
 # GENERATE QUIZ
 if generate_quiz:
 
-    st.session_state.submitted = False
+    topic = topic.strip()
+
+    if not topic:
+        st.sidebar.error("Please enter a topic first.")
+        st.stop()
 
     try:
+        uploaded_docs = requests.get(
+            f"{API_URL}/files",
+            timeout=10,
+        ).json()
+    except requests.RequestException as e:
+        st.error(f"Could not check uploaded PDFs. Make sure the backend is running. Details: {e}")
+        st.stop()
 
-        response = requests.post(
-            "http://localhost:8000/quiz",
-            json={
-                "topic": topic,
-                "difficulty": difficulty,
-                "num_questions": 5
-            }
-        )
+    if not uploaded_docs:
+        st.warning("Please upload a PDF before generating a quiz.")
+        st.stop()
 
-        st.session_state.quiz = response.json()
+    st.session_state.submitted = False
+    st.session_state.score = 0
+    st.session_state.quiz_meta = {
+        "topic": topic,
+        "difficulty": difficulty,
+    }
 
-    except Exception as e:
-        st.error(f"Error: {e}")
+    # Clear old answers
+    for key in list(st.session_state.keys()):
+        if key.startswith("question_"):
+            del st.session_state[key]
+
+    try:
+        with st.spinner("Generating quiz..."):
+            response = requests.post(
+                f"{API_URL}/quiz",
+                json={
+                    "topic": topic,
+                    "difficulty": difficulty,
+                    "num_questions": num_questions
+                },
+                timeout=60,
+            )
+            response.raise_for_status()
+            quiz = response.json()
+    except requests.HTTPError as e:
+        try:
+            detail = response.json().get("detail", str(e))
+        except ValueError:
+            detail = str(e)
+        st.error(f"Could not generate quiz. {detail}")
+        st.stop()
+    except requests.RequestException as e:
+        st.error(f"Could not generate quiz. Make sure the backend is running. Details: {e}")
+        st.stop()
+    except ValueError:
+        st.error("The backend returned an invalid quiz response.")
+        st.stop()
+
+    if not isinstance(quiz, list) or not quiz:
+        st.error("No quiz questions were returned for this topic.")
+        st.stop()
+
+    st.session_state.quiz = quiz
+
+    st.rerun()
 
 # HERO SCREEN
 if st.session_state.quiz is None:
@@ -196,36 +281,84 @@ if st.session_state.quiz is None:
 else:
 
     quiz = st.session_state.quiz
+    saved_topic = st.session_state.quiz_meta.get("topic", topic)
+    saved_difficulty = st.session_state.quiz_meta.get("difficulty", difficulty)
+    topic_label = escape(saved_topic)
+    difficulty_label = escape(saved_difficulty)
 
     st.markdown('<div class="quiz-card">', unsafe_allow_html=True)
 
-    st.title("📝 Quiz")
+    st.title("Quiz")
+    st.markdown(
+        f'<div class="quiz-meta">Topic: {topic_label} | Difficulty: {difficulty_label}</div>',
+        unsafe_allow_html=True,
+    )
 
-    user_answers = {}
+    with st.form("quiz_answer_form"):
+        user_answers = {}
 
-    for i, q in enumerate(quiz, start=1):
+        for i, q in enumerate(quiz, start=1):
 
-        st.markdown(f"### Q{i}. {q['question']}")
+            question = q.get("question", f"Question {i}")
+            options = q.get("options", [])
 
-        user_answers[i] = st.radio(
-            "",
-            q["options"],
-            key=f"question_{i}"
+            st.markdown(f"### Q{i}. {question}")
+
+            if not options:
+                st.warning("This question has no answer options.")
+                continue
+
+            user_answers[i] = st.radio(
+                label="",
+                options=options,
+                key=f"question_{i}",
+                index=None,
+                label_visibility="collapsed"
+            )
+            st.divider()
+
+        submit_quiz = st.form_submit_button(
+            "Submit Quiz",
+            use_container_width=True
         )
 
-        st.divider()
+    if submit_quiz:
 
-    if st.button("Submit Quiz"):
+        unanswered = []
+
+        for i in range(1, len(quiz) + 1):
+            if st.session_state.get(f"question_{i}") is None:
+                unanswered.append(i)
+
+        if unanswered:
+            st.error(
+                f"Please answer all questions. Missing: {', '.join(map(str, unanswered))}"
+            )
+            st.stop()
 
         score = 0
 
         for i, q in enumerate(quiz, start=1):
-
-            if user_answers[i] == q["answer"]:
+            if user_answers.get(i) == q.get("answer"):
                 score += 1
 
-        st.session_state.submitted = True
-        st.session_state.score = score
+        try:
+            response = requests.post(
+                f"{API_URL}/submit-quiz",
+                json={
+                    "topic": saved_topic,
+                    "difficulty": saved_difficulty,
+                    "score": score,
+                    "total": len(quiz)
+                },
+                timeout=15,
+            )
+            response.raise_for_status()
+            st.session_state.submitted = True
+            st.session_state.score = score
+
+        except Exception as e:
+            st.error(f"Failed to save result: {e}")
 
     if st.session_state.submitted:
 
@@ -236,9 +369,12 @@ else:
         st.subheader("Correct Answers")
 
         for i, q in enumerate(quiz, start=1):
+            selected = st.session_state.get(f"question_{i}")
+            answer = q.get("answer", "")
 
-            st.write(
-                f"Q{i}: {q['answer']}"
-            )
+            if selected == answer:
+                st.success(f"Q{i}: {answer}")
+            else:
+                st.error(f"Q{i}: Your answer: {selected} | Correct answer: {answer}")
 
     st.markdown('</div>', unsafe_allow_html=True)

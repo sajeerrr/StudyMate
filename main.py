@@ -1,4 +1,4 @@
-from fastapi import FastAPI,UploadFile,File,Depends
+from fastapi import FastAPI,UploadFile,File,Depends,HTTPException
 
 from rag.loader import load_pdf
 from rag.splitter import split_documents
@@ -158,11 +158,40 @@ def classify(request: ChatRequest):
 
 @app.post("/quiz")
 def create_quiz(request: QuizRequest):
-    quiz = generate_quiz(
-        request.topic,
-        request.difficulty,
-        request.num_questions
-    )
+    if not request.topic.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Topic is required."
+        )
+
+    uploaded_files = [
+        filename
+        for filename in os.listdir("data")
+        if filename.endswith(".pdf")
+    ]
+
+    if not uploaded_files:
+        raise HTTPException(
+            status_code=400,
+            detail="Please upload a PDF before generating a quiz."
+        )
+
+    try:
+        quiz = generate_quiz(
+            request.topic,
+            request.difficulty,
+            request.num_questions
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=502,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Quiz generation failed: {e}"
+        )
 
     return quiz
 
@@ -232,14 +261,51 @@ def dashboard(db:Session = Depends(get_db)):
         )
     else:
         average_score = 0
-    
-    strong, weak =analyze_topics(db)
+
+    topic_data = get_analytics(db)
+    strong, weak = analyze_topics(topic_data)
     recommendations = recommend_topics(weak)
+
+    topic_scores = [
+        {
+            "topic": row.topic,
+            "score": round(row.percentage, 2)
+        }
+        for row in topic_data
+    ]
+
+    difficulty_scores = {}
+    for result in results:
+        difficulty_scores.setdefault(result.difficulty, []).append(result.percentage)
+
+    difficulty_scores = [
+        {
+            "difficulty": level,
+            "score": round(sum(scores) / len(scores), 2),
+            "quizzes": len(scores)
+        }
+        for level, scores in difficulty_scores.items()
+    ]
+
+    quiz_history = [
+        {
+            "id": result.id,
+            "topic": result.topic,
+            "difficulty": result.difficulty,
+            "score": result.score,
+            "total": result.total,
+            "percentage": round(result.percentage, 2)
+        }
+        for result in results
+    ]
 
     return {
         "total_quizzes": total_quizzes,
         "average_score": average_score,
         "strong_topics": strong,
         "weak_topics": weak,
-        "recommendations": recommendations
+        "recommendations": recommendations,
+        "topic_scores": topic_scores,
+        "difficulty_scores": difficulty_scores,
+        "quiz_history": quiz_history
     }

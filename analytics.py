@@ -4,7 +4,7 @@ from db.models import QuizResult
 def get_analytics(db):
     results = db.query(
         QuizResult.topic,
-        func.avg(QuizResult.percentage)
+        func.avg(QuizResult.percentage).label("percentage")
     ).group_by(QuizResult.topic).all()
 
     return results
@@ -15,6 +15,7 @@ def analyze_topics(data):
     for result in data:
         topic = result.topic
         score = result.percentage
+
         if score >= 75:
             strong.append(topic)
 
