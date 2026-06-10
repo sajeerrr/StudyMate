@@ -16,6 +16,8 @@ from db.database import engine,Base,SessionLocal
 from db.models import QuizResult
 from sqlalchemy.orm import Session
 from analytics import get_analytics,analyze_topics,recommend_topics
+import os
+import uuid
 
 
 Base.metadata.create_all(bind=engine)
@@ -54,22 +56,68 @@ def home():
 async def upload_pdf(
     file: UploadFile = File(...)
 ):
-    filepath = f"data/{file.filename}"
+    # filepath = f"data/{file.filename}"
+    unique_id = str(uuid.uuid4())
+    unique_filename = (f"{unique_id}_{file.filename}")
+    filepath = f"data/{unique_filename}"
 
     with open(filepath,"wb") as f:
         f.write(await file.read())
 
     docs = load_pdf(filepath)
-
     chunks = split_documents(docs)
 
-    embeddings = get_embedding_model()
+    for chunk in chunks:
+        if chunk.metadata is None:
+            chunk.metadata = {}
+        chunk.metadata["source"] = unique_filename
+        chunk.metadata["original_name"] = file.filename
 
+    embeddings = get_embedding_model()
     create_vector_store(chunks,embeddings)
 
     return {
-        "message":"PDF Processed Successfully"
+        "message":"PDF Processed Successfully",
+        "file_id": unique_filename
     }
+
+
+@app.delete("/pdf/{file_id}")
+def delete_pdf(file_id: str):
+    filepath = f"data/{file_id}"
+
+    if not os.path.exists(filepath):
+        return{
+            "error": "File not found"
+        }
+    
+    os.remove(filepath)
+
+    embeddings = get_embedding_model()
+    vectordb = load_vector_store(embeddings)
+
+    vectordb._collection.delete(
+        where={"source": file_id}
+    )
+
+    return {
+        "message": "PDF is deleted"
+    }
+
+
+@app.get("/files")
+def get_files():
+    files = []
+
+    for filename in os.listdir("data"):
+        if filename.endswith(".pdf"):
+            orginal_name = "_".join(filename.split("_")[1:])
+            files.append({
+                "name": orginal_name,
+                "file_id": filename
+            })
+    return files
+
 
 @app.post("/chat",response_model=ChatResponse)
 def chat(request: ChatRequest):

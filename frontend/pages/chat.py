@@ -14,3 +14,17 @@ if st.button("Ask"):
     )
 
     st.write(response.json()["answer"])
+
+# st.set_page_config(
+#     page_title="StudyMate",
+#     layout="wide"
+# )
+
+# st.title("StudyMate")
+
+# st.sidebar.tile("Documents")
+
+# uploaded_file = st.sidebar.file_uploader(
+#     "Upload PDF",
+#     type=["pdf"]
+# )
