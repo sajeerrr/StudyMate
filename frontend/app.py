@@ -240,6 +240,20 @@ for key, default in [
 if "page" not in st.session_state:
     st.session_state.page = "chat"
 
+
+def clear_quiz_state():
+    st.session_state.quiz = None
+    st.session_state.submitted = False
+    st.session_state.score = 0
+    st.session_state.quiz_meta = {
+        "topic": "",
+        "difficulty": "Easy",
+    }
+
+    for key in list(st.session_state.keys()):
+        if key.startswith("question_"):
+            del st.session_state[key]
+
 # ── Page config ────────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="StudyMate",
@@ -393,14 +407,20 @@ with st.sidebar:
 
     with col1:
         if st.button("💬", key="nav_chat"):
+            if st.session_state.page == "quiz":
+                clear_quiz_state()
             st.session_state.page = "chat"
 
     with col2:
         if st.button("📊", key="nav_dashboard"):
+            if st.session_state.page == "quiz":
+                clear_quiz_state()
             st.session_state.page = "dashboard"
 
     with col3:
         if st.button("🔐", key="nav_login"):
+            if st.session_state.page == "quiz":
+                clear_quiz_state()
             st.session_state.page = "login"
 
     with col4:
@@ -638,18 +658,7 @@ elif st.session_state.page == "quiz":
             )
 
             if reset_quiz:
-                st.session_state.quiz = None
-                st.session_state.submitted = False
-                st.session_state.score = 0
-                st.session_state.quiz_meta = {
-                    "topic": "",
-                    "difficulty": "Easy",
-                }
-
-                for key in list(st.session_state.keys()):
-                    if key.startswith("question_"):
-                        del st.session_state[key]
-
+                clear_quiz_state()
                 st.rerun()
 
 
