@@ -235,6 +235,10 @@ for key, default in [
     if key not in st.session_state:
         st.session_state[key] = default
 
+
+if "page" not in st.session_state:
+    st.session_state.page = "chat"
+
 # ── Page config ────────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="StudyMate",
@@ -279,7 +283,7 @@ section[data-testid="stSidebar"] > div {
     display: flex; align-items: center; justify-content: center;
     font-size: 17px; flex-shrink: 0;
 }
-.sb-brand { font-size: 15px; font-weight: 700; color: #f1f5f9; letter-spacing: -0.02em; }
+.sb-brand { font-size: 30px; font-weight: 700; color: #f1f5f9; letter-spacing: -0.02em; }
 .sb-sub   { font-size: 11px; color: #4a566a; margin-top: 1px; }
 
 .sb-nav {
@@ -332,15 +336,6 @@ section[data-testid="stSidebar"] > div {
 }
 [data-testid="stFileUploaderDropzone"] p { color: #4a566a !important; font-size: 12px !important; }
 
-.stButton > button {
-    background: linear-gradient(135deg, #2563eb, #5b56e8) !important;
-    color: #fff !important; border: none !important;
-    border-radius: 8px !important; font-size: 13px !important;
-    font-weight: 500 !important; width: 100% !important;
-    transition: opacity .15s !important;
-}
-.stButton > button:hover { opacity: .88 !important; }
-
 .hero {
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
@@ -378,7 +373,6 @@ section[data-testid="stSidebar"] > div {
 
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 with st.sidebar:
-
     st.markdown("""
     <div class="sb-header">
         <div class="sb-logo">📚</div>
@@ -389,14 +383,29 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("""
-    <div class="sb-nav">
-        <a href="/" title="Chat">💬</a>
-        <a href="/dashboard" title="Dashboard">📊</a>
-        <a href="/login" title="Login">🔐</a>
-        <a href="/quiz" title="Quiz">📝</a>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        "<div style='height:15px'></div>",
+        unsafe_allow_html=True
+    )
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        if st.button("💬", key="nav_chat"):
+            st.session_state.page = "chat"
+
+    with col2:
+        if st.button("📊", key="nav_dashboard"):
+            st.session_state.page = "dashboard"
+
+    with col3:
+        if st.button("🔐", key="nav_login"):
+            st.session_state.page = "login"
+
+    with col4:
+        if st.button("📝", key="nav_quiz"):
+            st.session_state.page = "quiz"
+
 
     st.markdown('<div class="sb-label">Upload Document</div>', unsafe_allow_html=True)
 
@@ -452,35 +461,141 @@ with st.sidebar:
 
 
 # ── Main ───────────────────────────────────────────────────────────────────────
-if len(st.session_state.messages) == 0:
-    st.markdown("""
-    <div class="hero">
-        <div class="hero-ring">📖</div>
-        <h2>What do you want to learn?</h2>
-        <p>Upload a PDF and start asking questions. StudyMate will find answers directly from your documents.</p>
-    </div>
-    """, unsafe_allow_html=True)
+if st.session_state.page == "chat":
+    if len(st.session_state.messages) == 0:
+        st.markdown("""
+        <div class="hero">
+            <div class="hero-ring">📖</div>
+            <h2>What do you want to learn?</h2>
+            <p>Upload a PDF and start asking questions. StudyMate will find answers directly from your documents.</p>
+        </div>
+        """, unsafe_allow_html=True)
 
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.write(msg["content"])
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.write(msg["content"])
 
-question = st.chat_input("Ask a question about your documents…")
+    question = st.chat_input("Ask a question about your documents…")
 
-if question:
-    st.session_state.messages.append({"role": "user", "content": question})
+    if question:
+        st.session_state.messages.append({"role": "user", "content": question})
 
-    with st.chat_message("user"):
-        st.write(question)
+        with st.chat_message("user"):
+            st.write(question)
 
-    with st.spinner("Thinking…"):
-        try:
-            response = requests.post("http://localhost:8000/chat", json={"question": question})
-            answer = response.json()["answer"]
-        except Exception as e:
-            answer = f"⚠️ Could not reach the server: {e}"
+        with st.spinner("Thinking…"):
+            try:
+                response = requests.post("http://localhost:8000/chat", json={"question": question})
+                answer = response.json()["answer"]
+            except Exception as e:
+                answer = f"⚠️ Could not reach the server: {e}"
 
-    st.session_state.messages.append({"role": "assistant", "content": answer})
+        st.session_state.messages.append({"role": "assistant", "content": answer})
 
-    with st.chat_message("assistant"):
-        st.write(answer)
+        with st.chat_message("assistant"):
+            st.write(answer)
+
+#quiz------------------------------------------------------------------
+elif st.session_state.page == "quiz":
+    with st.sidebar:
+        st.markdown("### 📝 Quiz Settings")
+
+        topic = st.text_input(
+            "Topic",
+            placeholder="Machine Learning"
+        )
+
+        difficulty = st.selectbox(
+            "Difficulty",
+            ["Easy", "Medium", "Hard"]
+        )
+
+        num_questions = st.slider(
+            "Number of Questions",
+            min_value=5,
+            max_value=20,
+            value=5
+        )
+
+        generate_quiz = st.button(
+            "Generate Quiz",
+            use_container_width=True
+        )
+
+
+    if "quiz" not in st.session_state:
+        st.session_state.quiz = None
+
+    if "submitted" not in st.session_state:
+        st.session_state.submitted = False
+
+    if generate_quiz:
+
+        response = requests.post(
+            "http://localhost:8000/quiz",
+            json={
+                "topic": topic,
+                "difficulty": difficulty,
+                "num_questions": num_questions
+            }
+        )
+
+        st.session_state.quiz = response.json()
+        st.session_state.submitted = False
+
+
+    if st.session_state.quiz:
+
+        st.markdown("## 📝 Quiz")
+
+        score = 0
+
+        for i, q in enumerate(st.session_state.quiz, start=1):
+
+            st.markdown(f"""
+            <div style="
+                background:#161b27;
+                border:1px solid #21293d;
+                border-radius:12px;
+                padding:18px;
+                margin-bottom:15px;
+            ">
+            <h4>Q{i}. {q['question']}</h4>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.radio(
+                "",
+                q["options"],
+                key=f"question_{i}"
+            )
+
+        if st.button("Submit Quiz", use_container_width=True):
+
+            for i, q in enumerate(st.session_state.quiz, start=1):
+
+                if st.session_state[f"question_{i}"] == q["answer"]:
+                    score += 1
+
+            st.session_state.score = score
+            st.session_state.submitted = True
+
+
+    if st.session_state.submitted:
+
+        st.success(
+            f"Score: {st.session_state.score}/{len(st.session_state.quiz)}"
+        )
+
+        st.markdown("### Correct Answers")
+
+        for i, q in enumerate(st.session_state.quiz, start=1):
+
+            selected = st.session_state[f"question_{i}"]
+
+            if selected == q["answer"]:
+                st.success(f"Q{i}: {q['answer']}")
+            else:
+                st.error(
+                    f"Q{i}: Your Answer = {selected} | Correct = {q['answer']}"
+                )

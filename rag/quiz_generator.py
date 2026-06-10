@@ -43,7 +43,7 @@ def generate_quiz(topic, difficulty, num_questions):
     [
     {{
         "question":"...",
-        "option":[
+        "options":[
          "...",
          "...",
          "...",
