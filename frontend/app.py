@@ -359,21 +359,13 @@ section[data-testid="stSidebar"] > div {
 }
 .hero p { font-size: 14px; color: #8b949e; max-width: 360px; line-height: 1.7; margin: 0 auto; }
 
-[data-testid="stChatMessage"] { background: transparent !important; }
-[data-testid="stChatMessageContent"] {
-    background: #161b27 !important; border: 1px solid #21293d !important;
-    border-radius: 12px !important; color: #e6edf3 !important;
-    font-size: 14px !important; line-height: 1.65 !important;
-}
+
 
 [data-testid="stChatInput"] {
     background: #161b27 !important; border: 1.5px solid #21293d !important;
     border-radius: 12px !important; color: #e6edf3 !important;
 }
-[data-testid="stChatInput"]:focus-within {
-    border-color: #2f81f7 !important;
-    box-shadow: 0 0 0 3px rgba(47,129,247,0.1) !important;
-}
+
 
 .stSuccess { background: #0d2b17 !important; border-color: #1a4d2e !important; color: #4ade80 !important; border-radius: 8px !important; }
 .stError   { background: #2d0f0f !important; border-radius: 8px !important; }
