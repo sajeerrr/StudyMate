@@ -195,14 +195,6 @@ def create_quiz(request: QuizRequest):
 
     return quiz
 
-# @app.post("/submit")
-# def submit_quiz(request: QuizSubmission):
-#     result = evaluate_quiz(
-#         request.questions,
-#         request.answers
-#     )
-
-#     return result
 
 @app.post("/submit-quiz")
 def submit_quiz(
