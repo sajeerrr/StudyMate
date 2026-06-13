@@ -1,5 +1,7 @@
 # StudyMate – AI-Powered Learning Assistant
 
+**Demo Link:**  [Watch the StudyMate Demo on Youtube](https://youtu.be/4w-RXfVZr00)
+
 ## Overview
 
 StudyMate is an AI-powered learning platform that helps students learn from their study materials more effectively. Users can upload PDF documents, interact with an AI tutor, generate quizzes, and track learning performance through analytics.
