@@ -1,130 +1,142 @@
-# StudyMate – AI-Powered Learning Assistant
+<div align="center">
 
-**Demo Link:**  [Watch the StudyMate Demo on Youtube](https://youtu.be/4w-RXfVZr00)
+# StudyMate
+### AI-Powered Learning Assistant
+
+**Transform your study materials into an interactive learning experience**
+
+[Watch Demo in Youtube](https://youtu.be/4w-RXfVZr00)
+
+---
+
+</div>
 
 ## Overview
 
-StudyMate is an AI-powered learning platform that helps students learn from their study materials more effectively. Users can upload PDF documents, interact with an AI tutor, generate quizzes, and track learning performance through analytics.
+**StudyMate** is a full-stack AI learning platform that turns static PDF study materials into an interactive, intelligent tutor. Upload your notes or textbooks, and StudyMate lets you chat with the content, auto-generate quizzes, and track your learning progress — all powered by a RAG pipeline backed by Groq LLM.
 
-The system combines Retrieval-Augmented Generation (RAG), vector search, and Large Language Models to provide context-aware educational assistance.
+> Built with FastAPI · LangChain · ChromaDB · Streamlit · PostgreSQL · Docker
 
 ---
 
 ## Features
 
-### AI Chat with Study Material
-
-* Upload PDF notes and textbooks
-* Ask questions about uploaded documents
-* Context-aware answers using RAG
-
-### Quiz Generation
-
-* Generate quizzes from study materials
-* Multiple difficulty levels
-* Automatic scoring
-
-### Learning Analytics
-
-* Track quiz performance
-* Topic-wise score analysis
-* Difficulty-wise performance insights
-* Personalized recommendations
-
-### Authentication
-
-* User registration and login
-* JWT-based authentication
-* Protected API routes
-
-### Database Support
-
-* PostgreSQL for persistent storage
-* User management
-* Quiz history tracking
+| Feature | Description |
+|---|---|
+| **AI Chat** | Ask questions about your uploaded PDFs — context-aware answers via RAG |
+| **Quiz Generation** | Auto-generate quizzes at multiple difficulty levels with automatic scoring |
+| **Learning Analytics** | Topic-wise and difficulty-wise performance tracking with personalized recommendations |
+| **Authentication** | JWT-based user registration, login, and protected API routes |
+| **Persistent Storage** | PostgreSQL-backed user management and full quiz history |
 
 ---
 
 ## Architecture
 
-```text
-Frontend (Streamlit)
-        │
-        ▼
-FastAPI Backend
-        │
-        ▼
-RAG Pipeline
-        │
-        ▼
-ChromaDB Vector Store
-        │
-        ▼
-Groq LLM
+```
+┌─────────────────────────────────────────────────┐
+│              Frontend (Streamlit)                │
+└────────────────────┬────────────────────────────┘
+                     │  HTTP / REST
+┌────────────────────▼────────────────────────────┐
+│             FastAPI Backend                      │
+│   auth.py · analytics.py · models.py            │
+└────────────────────┬────────────────────────────┘
+                     │
+┌────────────────────▼────────────────────────────┐
+│               RAG Pipeline                       │
+│  PDF → Chunks → Embeddings → ChromaDB           │
+└────────┬───────────────────────┬────────────────┘
+         │                       │
+┌────────▼────────┐   ┌──────────▼──────────────┐
+│  ChromaDB       │   │  Groq LLM               │
+│  Vector Store   │   │  (Context + Answer)     │
+└─────────────────┘   └─────────────────────────┘
 ```
 
-### System Flow
+### Request Flow
 
-1. User uploads PDF
-2. PDF is processed and split into chunks
-3. Chunks are converted into embeddings
-4. Embeddings are stored in ChromaDB
-5. User asks a question
-6. Relevant chunks are retrieved
-7. Context is sent to Groq LLM
-8. AI generates an answer
+```
+User uploads PDF
+      │
+      ▼
+PDF split into chunks
+      │
+      ▼
+Sentence Transformers generate embeddings
+      │
+      ▼
+Embeddings stored in ChromaDB
+      │
+      ▼
+User asks a question
+      │
+      ▼
+Top-k relevant chunks retrieved
+      │
+      ▼
+Context + question sent to Groq LLM
+      │
+      ▼
+AI answer returned to user
+```
 
 ---
 
 ## Tech Stack
 
-### Backend
+### Backend & API
 
-* FastAPI
-* Python
-* SQLAlchemy
-* JWT Authentication
-
-### Database
-
-* PostgreSQL
+| Component | Technology |
+|---|---|
+| API Framework | FastAPI |
+| ORM | SQLAlchemy |
+| Authentication | JWT (PyJWT) |
+| Language | Python 3.10+ |
 
 ### AI & RAG
 
-* LangChain
-* ChromaDB
-* Sentence Transformers
-* HuggingFace Embeddings
-* Groq LLM
+| Component | Technology |
+|---|---|
+| Orchestration | LangChain |
+| Embeddings | Sentence Transformers (HuggingFace) |
+| Vector Store | ChromaDB |
+| LLM | Groq (LLaMA 3) |
 
-### Frontend
+### Frontend & Database
 
-* Streamlit
+| Component | Technology |
+|---|---|
+| UI | Streamlit |
+| Primary Database | PostgreSQL |
 
 ### DevOps
 
-* Docker
-* Docker Compose
-* GitHub Actions
+| Component | Technology |
+|---|---|
+| Containerization | Docker + Docker Compose |
+| CI/CD | GitHub Actions |
+| Testing | Pytest |
 
 ---
 
 ## Project Structure
 
-```text
+```
 StudyMate/
 │
-├── app/
-├── db/
-├── rag/
-├── frontend/
-├── tests/
+├── app/                    # Core application modules
+├── db/                     # Database config and migrations
+├── rag/                    # RAG pipeline (chunking, embeddings, retrieval)
+├── frontend/               # Streamlit UI
+│   └── app.py
+├── tests/                  # Pytest test suite
 │
-├── main.py
-├── auth.py
-├── models.py
-├── schemas.py
-├── analytics.py
+├── main.py                 # FastAPI entry point
+├── auth.py                 # JWT authentication
+├── models.py               # SQLAlchemy models
+├── schemas.py              # Pydantic schemas
+├── analytics.py            # Learning analytics logic
 │
 ├── Dockerfile
 ├── docker-compose.yml
@@ -134,138 +146,153 @@ StudyMate/
 
 ---
 
-## Installation
+## Getting Started
 
-### Clone Repository
+### Prerequisites
+
+- Python 3.10+
+- PostgreSQL
+- Docker (optional)
+- Groq API key
+
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/sajeerrr/StudyMate.git
 cd StudyMate
 ```
 
-### Create Virtual Environment
+### 2. Create and Activate Virtual Environment
 
 ```bash
 python -m venv venv
-```
 
-### Activate Environment
-
-```bash
+# Windows
 venv\Scripts\activate
+
+# macOS / Linux
+source venv/bin/activate
 ```
 
-### Install Dependencies
+### 3. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### Configure Environment Variables
+### 4. Configure Environment Variables
 
-Create `.env`
+Create a `.env` file in the root directory:
 
 ```env
-DATABASE_URL=your_database_url
+DATABASE_URL=postgresql://user:password@localhost:5432/studymate
 GROQ_API_KEY=your_groq_api_key
-SECRET_KEY=your_secret_key
+SECRET_KEY=your_jwt_secret_key
 ```
 
-### Run FastAPI
+### 5. Run the Application
 
+**Start FastAPI backend:**
 ```bash
 uvicorn main:app --reload
 ```
 
-### Run Streamlit
-
+**Start Streamlit frontend** (in a separate terminal):
 ```bash
 streamlit run frontend/app.py
 ```
+
+Open `http://localhost:8501` in your browser.
 
 ---
 
 ## Docker Deployment
 
-Build image:
+### Build and Run
 
 ```bash
+# Build image
 docker build -t studymate .
-```
 
-Run container:
-
-```bash
+# Run container
 docker run -p 8000:8000 studymate
 ```
 
-Using Docker Compose:
+### Using Docker Compose (Recommended)
 
 ```bash
 docker compose up --build
 ```
 
+This starts FastAPI, Streamlit, and PostgreSQL together in one command.
+
 ---
 
-## API Documentation
+## API Reference
 
-After starting the backend:
+After starting the backend, interactive API docs are available at:
 
-### Swagger UI
+| Interface | URL |
+|---|---|
+| Swagger UI | `http://localhost:8000/docs` |
+| ReDoc | `http://localhost:8000/redoc` |
 
-```text
-http://localhost:8000/docs
-```
+### Key Endpoints
 
-### ReDoc
-
-```text
-http://localhost:8000/redoc
-```
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/auth/register` | Register a new user |
+| `POST` | `/auth/login` | Login and receive JWT token |
+| `POST` | `/upload` | Upload a PDF document |
+| `POST` | `/chat` | Ask a question about uploaded material |
+| `POST` | `/quiz/generate` | Generate a quiz from study material |
+| `GET` | `/analytics/me` | Fetch personal learning analytics |
 
 ---
 
 ## Testing
 
-Run tests:
-
 ```bash
 pytest
 ```
 
-GitHub Actions automatically runs tests on every push.
+Tests run automatically on every push via **GitHub Actions CI**.
 
 ---
 
 ## Screenshots
 
-### Home Page
+| Home Page | AI Chat |
+|---|---|
+| ![Home](screenshots/home.png) | ![Chat](screenshots/chat.png) |
 
-Add screenshot here.
-
-### AI Chat
-
-Add screenshot here.
-
-### Quiz Generation
-
-Add screenshot here.
-
-### Analytics Dashboard
-
-Add screenshot here.
+| Quiz Generation | Analytics Dashboard |
+|---|---|
+| ![Quiz](screenshots/quiz.png) | ![Analytics](screenshots/analytics.png) |
 
 ---
 
-## Future Improvements
+## 🗺️ Roadmap
 
-* Voice-based learning assistant
-* Flashcard generation
-* Multi-document retrieval
-* Study schedule planner
-* OCR support for scanned PDFs
-* Collaborative study groups
-* Advanced analytics dashboard
-* Mobile application
+- [ ] 🎙️ Voice-based learning assistant
+- [ ] 🃏 Flashcard generation
+- [ ] 📂 Multi-document retrieval
+- [ ] 📅 Study schedule planner
+- [ ] 🔍 OCR support for scanned PDFs
+- [ ] 👥 Collaborative study groups
+- [ ] 📈 Advanced analytics dashboard
+- [ ] 📱 Mobile application
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please open an issue first to discuss what you'd like to change.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ---
