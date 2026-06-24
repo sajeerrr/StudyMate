@@ -262,12 +262,12 @@ Tests run automatically on every push via **GitHub Actions CI**.
 
 ## Screenshots
 
-| Home Page | AI Chat |
+| AI Chat | Quiz Generation |
 |---|---|
-| ![Home](screenshots/home.png) | ![Chat](screenshots/chat.png) |
+| ![Home](screenshots/chat.png) | ![Chat](screenshots/quiz.png) |
 
-| Quiz Generation | Analytics Dashboard |
+| Dashboard | Quiz History |
 |---|---|
-| ![Quiz](screenshots/quiz.png) | ![Analytics](screenshots/analytics.png) |
+| ![Quiz](screenshots/dashboard.png) | ![Analytics](screenshots/history.png) |
 
 ---
