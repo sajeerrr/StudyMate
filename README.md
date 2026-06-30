@@ -1,7 +1,6 @@
-<div align="center">
+<div>
 
-# StudyMate
-### AI-Powered Learning Assistant
+# StudyMate - AI-Powered Learning Assistant
 
 **Transform your study materials into an interactive learning experience**
 
