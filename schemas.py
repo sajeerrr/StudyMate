@@ -1,10 +1,14 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
+
+# Chat
 
 class ChatRequest(BaseModel):
     question: str
 
 class ChatResponse(BaseModel):
     answer: str
+
+# Quiz
 
 class QuizRequest(BaseModel):
     topic: str
@@ -15,23 +19,19 @@ class QuizSubmission(BaseModel):
     questions: list
     answers: list
 
-
 class QuizStore(BaseModel):
     topic: str
     difficulty: str
     score: int
     total: int
 
-#for user login
+# User
+
 class UserCreate(BaseModel):
     username: str
-    email: str
+    email: EmailStr
     password: str
 
 class UserLogin(BaseModel):
-    email: str
+    email: EmailStr
     password: str
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str

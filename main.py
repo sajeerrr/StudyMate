@@ -1,4 +1,4 @@
-from fastapi import FastAPI,UploadFile,File,Depends,HTTPException
+from fastapi import FastAPI,UploadFile,File,Depends,HTTPException,Response,Cookie
 
 from rag.loader import load_pdf
 from rag.splitter import split_documents
@@ -7,13 +7,13 @@ from rag.vector_store import create_vector_store,load_vector_store
 from rag.chatbot import ask_rag
 from rag.quiz_generator import generate_quiz,evaluate_quiz
 
-from schemas import ChatRequest,ChatResponse,QuizRequest,QuizSubmission,QuizStore
+from schemas import ChatRequest,ChatResponse,QuizRequest,QuizSubmission,QuizStore,UserLogin
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from ml import difficulty,classifier
 
 from db.database import engine,Base,SessionLocal
-from db.models import QuizResult
+from db.models import QuizResult, User, UserSession
 from sqlalchemy.orm import Session
 from analytics import get_analytics,analyze_topics,recommend_topics
 import os
@@ -51,6 +51,84 @@ def home():
     return {
         "message":"StudyMate Running"
     }
+
+
+@app.post("/login")
+def login(
+    request: UserLogin,
+    response: Response,
+    db: Session = Depends(get_db)
+):
+
+    # Find user
+    user = db.query(User).filter(
+        User.email == request.email
+    ).first()
+
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password"
+        )
+
+    # Verify password
+    if user.password != request.password:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password"
+        )
+
+    # Generate session id
+    session_id = str(uuid.uuid4())
+
+    # Store session in database
+    session = UserSession(
+        session_id=session_id,
+        user_id=user.id
+    )
+
+    db.add(session)
+    db.commit()
+
+    # Send session id as cookie
+    response.set_cookie(
+        key="session_id",
+        value=session_id,
+        httponly=True,
+        samesite="lax"
+    )
+
+    return {
+        "message": "Login Successful"
+    }
+
+
+@app.post("/logout")
+def logout(
+    response: Response,
+    session_id: str = Cookie(None),
+    db: Session = Depends(get_db)
+):
+    if session_id is None:
+        raise HTTPException(
+            status_code=401,
+            detail="No active session"
+        )
+
+    session = db.query(UserSession).filter(
+        UserSession.session_id == session_id
+    ).first()
+
+    if session:
+        db.delete(session)
+        db.commit()
+
+    response.delete_cookie("session_id")
+
+    return {
+        "message": "Logout Successful"
+    }
+
 
 @app.post("/upload")
 async def upload_pdf(
