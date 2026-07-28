@@ -25,7 +25,6 @@
 | **AI Chat** | Ask questions about your uploaded PDFs — context-aware answers via RAG |
 | **Quiz Generation** | Auto-generate quizzes at multiple difficulty levels with automatic scoring |
 | **Learning Analytics** | Topic-wise and difficulty-wise performance tracking with personalized recommendations |
-| **Authentication** | JWT-based user registration, login, and protected API routes |
 | **Persistent Storage** | PostgreSQL-backed user management and full quiz history |
 
 ---
@@ -90,7 +89,6 @@ AI answer returned to user
 |---|---|
 | API Framework | FastAPI |
 | ORM | SQLAlchemy |
-| Authentication | JWT (PyJWT) |
 | Language | Python 3.10+ |
 
 ### AI & RAG
@@ -132,7 +130,6 @@ StudyMate/
 ├── tests/                  # Pytest test suite
 │
 ├── main.py                 # FastAPI entry point
-├── auth.py                 # JWT authentication
 ├── models.py               # SQLAlchemy models
 ├── schemas.py              # Pydantic schemas
 ├── analytics.py            # Learning analytics logic
@@ -240,8 +237,6 @@ After starting the backend, interactive API docs are available at:
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/auth/register` | Register a new user |
-| `POST` | `/auth/login` | Login and receive JWT token |
 | `POST` | `/upload` | Upload a PDF document |
 | `POST` | `/chat` | Ask a question about uploaded material |
 | `POST` | `/quiz/generate` | Generate a quiz from study material |
