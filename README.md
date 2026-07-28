@@ -265,3 +265,4 @@ Tests run automatically on every push via **GitHub Actions CI**.
 | ![Quiz](screenshots/dashboard.png) | ![Analytics](screenshots/history.png) |
 
 ---
+
